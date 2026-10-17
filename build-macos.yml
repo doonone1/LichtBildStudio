@@ -1,0 +1,110 @@
+name: Build Lichtbild Studio - macOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.rid }}
+    runs-on: macos-14
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rid:
+          - osx-arm64
+          - osx-x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore "LichtbildStudio.Avalonia.csproj"
+
+      - name: Publish self-contained app
+        run: >
+          dotnet publish "LichtbildStudio.Avalonia.csproj"
+          --configuration Release
+          --runtime "${{ matrix.rid }}"
+          --self-contained true
+          --output "publish/${{ matrix.rid }}"
+
+      - name: Create macOS application bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RID="${{ matrix.rid }}"
+          APP="Lichtbild Studio.app"
+          APP_ROOT="build/${RID}/${APP}"
+
+          mkdir -p "${APP_ROOT}/Contents/MacOS"
+          mkdir -p "${APP_ROOT}/Contents/Resources"
+
+          cp -R "publish/${RID}/." "${APP_ROOT}/Contents/MacOS/"
+
+          EXECUTABLE="${APP_ROOT}/Contents/MacOS/LichtbildStudio"
+
+          if [ ! -f "${EXECUTABLE}" ]; then
+            echo "Expected executable not found: ${EXECUTABLE}"
+            echo "Published files:"
+            find "publish/${RID}" -maxdepth 2 -type f -print
+            exit 1
+          fi
+
+          chmod +x "${EXECUTABLE}"
+
+          cat > "${APP_ROOT}/Contents/Info.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+          "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleDisplayName</key>
+            <string>Lichtbild Studio</string>
+            <key>CFBundleName</key>
+            <string>Lichtbild Studio</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.lichtbildstudio.app</string>
+            <key>CFBundleExecutable</key>
+            <string>LichtbildStudio</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleVersion</key>
+            <string>0.2.0</string>
+            <key>CFBundleShortVersionString</key>
+            <string>0.2.0</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>12.0</string>
+          </dict>
+          </plist>
+          EOF
+
+          codesign --force --deep --sign - "${APP_ROOT}"
+
+      - name: Create DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RID="${{ matrix.rid }}"
+          mkdir -p "dmg/${RID}"
+          cp -R "build/${RID}/Lichtbild Studio.app" "dmg/${RID}/"
+          ln -s /Applications "dmg/${RID}/Applications"
+
+          mkdir -p artifacts
+
+          hdiutil create             -volname "Lichtbild Studio"             -srcfolder "dmg/${RID}"             -ov             -format UDZO             "artifacts/LichtbildStudio-${RID}.dmg"
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: LichtbildStudio-${{ matrix.rid }}
+          path: artifacts/LichtbildStudio-${{ matrix.rid }}.dmg
+          if-no-files-found: error

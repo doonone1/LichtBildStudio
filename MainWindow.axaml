@@ -1,0 +1,152 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="LichtbildStudio.MainWindow"
+        Title="Lichtbild Studio"
+        Width="1500"
+        Height="920"
+        MinWidth="1100"
+        MinHeight="700"
+        WindowStartupLocation="CenterScreen">
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="18">
+    <Border Grid.Row="0" CornerRadius="14" Padding="16" Margin="0,0,0,14"
+            Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="3">
+          <TextBlock Text="LICHTBILD STUDIO" FontSize="20" FontWeight="Bold"/>
+          <TextBlock Text="Schneller JPEG-Workflow für Ordner, Vorschau und bildabhängige Korrekturen"
+                     FontSize="12" Opacity="0.65"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Content="Ordner öffnen" Click="OpenFolder_Click"/>
+          <Button Content="Automatik" Click="AnalyzeAuto_Click"/>
+          <Button x:Name="ThemeButton" Content="Dark Mode" Click="Theme_Click"/>
+          <Button Content="Exportieren" Click="Export_Click"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="260,*,310">
+      <Border Grid.Column="0" CornerRadius="14" Padding="12" Margin="0,0,14,0"
+              Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Spacing="8">
+            <TextBlock Text="BIBLIOTHEK" FontSize="12" FontWeight="Bold" Opacity="0.65"/>
+            <TextBox x:Name="SearchBox" Watermark="Dateinamen filtern"
+                     TextChanged="SearchBox_TextChanged"/>
+          </StackPanel>
+          <TextBlock x:Name="FolderLabel" DockPanel.Dock="Bottom"
+                     Text="Noch kein Ordner geöffnet" TextWrapping="Wrap"
+                     FontSize="11" Opacity="0.65" Margin="0,10,0,0"/>
+          <ListBox x:Name="ImageList" SelectionChanged="ImageList_SelectionChanged"
+                   Margin="0,10,0,0"/>
+        </DockPanel>
+      </Border>
+
+      <Border Grid.Column="1" CornerRadius="14" Padding="12" Margin="0,0,14,0"
+              Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        <Grid RowDefinitions="*,Auto">
+          <Border CornerRadius="10" Padding="8"
+                  Background="{DynamicResource SystemControlBackgroundLowBrush}">
+            <Grid>
+              <Image x:Name="PreviewImage" Stretch="Uniform"/>
+              <TextBlock x:Name="EmptyPreviewText"
+                         Text="Öffne einen Ordner und wähle ein JPEG."
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Opacity="0.45"/>
+            </Grid>
+          </Border>
+          <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="2,10,2,0">
+            <TextBlock x:Name="ImageInfo" Text="Bereit"
+                       VerticalAlignment="Center" Opacity="0.7"/>
+            <Button Grid.Column="1" Content="Original / Vorschau"
+                    Click="ToggleOriginal_Click"/>
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="2" CornerRadius="14" Padding="16"
+              Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        <ScrollViewer>
+          <StackPanel Spacing="8">
+            <TextBlock Text="ENTWICKLUNG" FontSize="12" FontWeight="Bold" Opacity="0.65"/>
+            <TextBlock Text="Bildabhängige Automatik" FontSize="18" FontWeight="SemiBold"/>
+            <TextBlock Text="Vorschlag analysieren, prüfen und anschließend anwenden. Nicht ausgewählte Bereiche bleiben unverändert."
+                       TextWrapping="Wrap" FontSize="11" Opacity="0.65"/>
+
+            <CheckBox x:Name="AutoExposureCheck" Content="Belichtung" IsChecked="True"/>
+            <CheckBox x:Name="AutoWhiteBalanceCheck" Content="Weißabgleich" IsChecked="True"/>
+            <CheckBox x:Name="AutoHighlightsCheck" Content="Lichter" IsChecked="True"/>
+            <CheckBox x:Name="AutoShadowsCheck" Content="Schatten" IsChecked="True"/>
+            <CheckBox x:Name="AutoContrastCheck" Content="Kontrast und Schwarzpunkt" IsChecked="True"/>
+            <CheckBox x:Name="AutoColorCheck" Content="Farben und Dynamik" IsChecked="True"/>
+
+            <TextBlock Text="Automatikstärke: 75 Prozent" FontSize="11" Opacity="0.65" Margin="0,3,0,0"/>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Vorschlag berechnen" Click="AnalyzeAuto_Click"/>
+              <Button Content="Vorschlag anwenden" Click="ApplyAuto_Click"/>
+            </StackPanel>
+
+            <TextBlock x:Name="AutoSummary" Text="Noch keine Analyse durchgeführt."
+                       TextWrapping="Wrap" FontSize="11"/>
+
+            <Separator Margin="0,8"/>
+
+            <TextBlock Text="Manuelle Feinjustierung" FontSize="15" FontWeight="SemiBold"/>
+
+            <TextBlock Text="Belichtung"/>
+            <Slider x:Name="ExposureSlider" Minimum="-2" Maximum="2" Value="0"
+                    ValueChanged="Adjustment_Changed"/>
+            <TextBlock x:Name="ExposureValue" Text="0,00 EV" FontSize="11" Opacity="0.65"/>
+
+            <TextBlock Text="Kontrast"/>
+            <Slider x:Name="ContrastSlider" Minimum="0.5" Maximum="1.8" Value="1"
+                    ValueChanged="Adjustment_Changed"/>
+            <TextBlock x:Name="ContrastValue" Text="1,00" FontSize="11" Opacity="0.65"/>
+
+            <TextBlock Text="Sättigung / Dynamik"/>
+            <Slider x:Name="SaturationSlider" Minimum="0" Maximum="1.8" Value="1"
+                    ValueChanged="Adjustment_Changed"/>
+            <TextBlock x:Name="SaturationValue" Text="1,00" FontSize="11" Opacity="0.65"/>
+
+            <TextBlock Text="Weißabgleich / Wärme"/>
+            <Slider x:Name="WarmthSlider" Minimum="-30" Maximum="30" Value="0"
+                    ValueChanged="Adjustment_Changed"/>
+            <TextBlock x:Name="WarmthValue" Text="0" FontSize="11" Opacity="0.65"/>
+
+            <TextBlock Text="Lichter"/>
+            <Slider x:Name="HighlightsSlider" Minimum="-100" Maximum="100" Value="0"
+                    ValueChanged="Adjustment_Changed"/>
+            <TextBlock x:Name="HighlightsValue" Text="0" FontSize="11" Opacity="0.65"/>
+
+            <TextBlock Text="Schatten"/>
+            <Slider x:Name="ShadowsSlider" Minimum="-100" Maximum="100" Value="0"
+                    ValueChanged="Adjustment_Changed"/>
+            <TextBlock x:Name="ShadowsValue" Text="0" FontSize="11" Opacity="0.65"/>
+
+            <TextBlock Text="Schwarzpunkt"/>
+            <Slider x:Name="BlackPointSlider" Minimum="-40" Maximum="40" Value="0"
+                    ValueChanged="Adjustment_Changed"/>
+            <TextBlock x:Name="BlackPointValue" Text="0" FontSize="11" Opacity="0.65"/>
+
+            <Separator Margin="0,8"/>
+            <Button Content="Zurücksetzen" Click="Reset_Click"/>
+
+            <TextBlock Text="Originaldateien werden nicht überschrieben. Der Export erfolgt als JPEG mit Qualität 100 und 300 DPI."
+                       TextWrapping="Wrap" FontSize="11" Opacity="0.65" Margin="0,4,0,0"/>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+
+    <Border Grid.Row="2" CornerRadius="10" Padding="10" Margin="0,14,0,0"
+            Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock x:Name="StatusText" Text="Bereit" Opacity="0.7"/>
+        <TextBlock Grid.Column="1" Text="JPEG only" FontSize="11" Opacity="0.55"/>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

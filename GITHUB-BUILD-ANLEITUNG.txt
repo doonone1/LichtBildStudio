@@ -1,0 +1,25 @@
+LICHTBILD STUDIO – MAC GITHUB BUILD
+
+WICHTIG:
+Die eigentliche GitHub-Workflow-Datei liegt unter:
+
+.github/workflows/build-macos.yml
+
+Eine sichtbare Kopie liegt zusätzlich im Hauptordner als:
+
+build-macos.yml
+
+Wenn GitHub den versteckten .github-Ordner beim Upload nicht übernimmt:
+1. Öffne dein Repository auf GitHub.
+2. Add file -> Create new file
+3. Als Dateiname exakt eingeben:
+   .github/workflows/build-macos.yml
+4. Den Inhalt aus der Datei build-macos.yml im Hauptordner kopieren.
+5. Commit changes.
+6. Danach Actions öffnen.
+7. "Build Lichtbild Studio – macOS" auswählen.
+8. Run workflow.
+
+Nach erfolgreichem Build liegen unter Actions -> Artifacts:
+- LichtbildStudio-osx-arm64
+- LichtbildStudio-osx-x64
