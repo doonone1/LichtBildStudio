@@ -6,26 +6,30 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+
 using ImageSharpImage = SixLabors.ImageSharp.Image;
 using ImageSharpRgbaImage = SixLabors.ImageSharp.Image<Rgba32>;
-using SixLabors.ImageSharp.Processing;
 
 namespace LichtbildStudio;
 
 public partial class MainWindow : Window
 {
     private readonly List<string> _allFiles = new();
+
     private ImageSharpRgbaImage? _original;
     private ImageSharpRgbaImage? _working;
+
     private string? _currentFile;
+
     private AutoProposal _proposal = new();
+
     private bool _showOriginal;
 
     public MainWindow()
@@ -38,12 +42,13 @@ public partial class MainWindow : Window
         object? sender,
         Avalonia.Interactivity.RoutedEventArgs e)
     {
-        var folders = await StorageProvider.OpenFolderPickerAsync(
-            new FolderPickerOpenOptions
-            {
-                Title = "JPEG-Ordner auswählen",
-                AllowMultiple = false
-            });
+        var folders =
+            await StorageProvider.OpenFolderPickerAsync(
+                new FolderPickerOpenOptions
+                {
+                    Title = "JPEG-Ordner auswählen",
+                    AllowMultiple = false
+                });
 
         var folder = folders.FirstOrDefault();
 
@@ -59,7 +64,8 @@ public partial class MainWindow : Window
         _allFiles.Clear();
 
         _allFiles.AddRange(
-            Directory.EnumerateFiles(path)
+            Directory
+                .EnumerateFiles(path)
                 .Where(IsJpeg)
                 .OrderBy(
                     x => x,
@@ -81,16 +87,20 @@ public partial class MainWindow : Window
 
     private void RefreshFileList()
     {
-        var filter = SearchBox.Text?.Trim() ?? string.Empty;
+        var filter =
+            SearchBox.Text?.Trim() ?? string.Empty;
 
-        var files = string.IsNullOrWhiteSpace(filter)
-            ? _allFiles
-            : _allFiles
-                .Where(x =>
-                    Path.GetFileName(x).Contains(
-                        filter,
-                        StringComparison.OrdinalIgnoreCase))
-                .ToList();
+        var files =
+            string.IsNullOrWhiteSpace(filter)
+                ? _allFiles
+                : _allFiles
+                    .Where(
+                        x => Path
+                            .GetFileName(x)
+                            .Contains(
+                                filter,
+                                StringComparison.OrdinalIgnoreCase))
+                    .ToList();
 
         ImageList.ItemsSource =
             files.Select(Path.GetFileName).ToList();
@@ -100,11 +110,13 @@ public partial class MainWindow : Window
         object? sender,
         TextChangedEventArgs e)
     {
-        var oldIndex = ImageList.SelectedIndex;
+        var oldIndex =
+            ImageList.SelectedIndex;
 
         RefreshFileList();
 
-        if (oldIndex >= 0 && ImageList.ItemCount > 0)
+        if (oldIndex >= 0 &&
+            ImageList.ItemCount > 0)
         {
             ImageList.SelectedIndex =
                 Math.Min(
@@ -120,11 +132,12 @@ public partial class MainWindow : Window
         if (ImageList.SelectedItem is not string name)
             return;
 
-        var path = _allFiles.FirstOrDefault(
-            x => string.Equals(
-                Path.GetFileName(x),
-                name,
-                StringComparison.OrdinalIgnoreCase));
+        var path =
+            _allFiles.FirstOrDefault(
+                x => string.Equals(
+                    Path.GetFileName(x),
+                    name,
+                    StringComparison.OrdinalIgnoreCase));
 
         if (path is null)
             return;
@@ -136,7 +149,8 @@ public partial class MainWindow : Window
     {
         try
         {
-            StatusText.Text = "Bild wird geladen…";
+            StatusText.Text =
+                "Bild wird geladen…";
 
             _currentFile = path;
 
@@ -147,15 +161,16 @@ public partial class MainWindow : Window
                 File.OpenRead(path);
 
             _original =
-                await ImageSharpImage.LoadAsync<Rgba32>(
-                    stream);
+                await ImageSharpImage
+                    .LoadAsync<Rgba32>(stream);
 
             _working =
                 _original.Clone();
 
             ResetSlidersWithoutPreview();
 
-            _proposal = new AutoProposal();
+            _proposal =
+                new AutoProposal();
 
             AutoSummary.Text =
                 "Noch keine Analyse durchgeführt.";
@@ -168,7 +183,8 @@ public partial class MainWindow : Window
                 $"{Path.GetFileName(path)}  •  " +
                 $"{_original.Width} × {_original.Height}";
 
-            StatusText.Text = "Bild geladen";
+            StatusText.Text =
+                "Bild geladen";
         }
         catch (Exception ex)
         {
@@ -367,142 +383,145 @@ public partial class MainWindow : Window
                 -0.4f,
                 0.4f);
 
-        _working.ProcessPixelRows(accessor =>
-        {
-            for (var y = 0;
-                 y < accessor.Height;
-                 y++)
+        _working.ProcessPixelRows(
+            accessor =>
             {
-                var row =
-                    accessor.GetRowSpan(y);
-
-                for (var x = 0;
-                     x < row.Length;
-                     x++)
+                for (
+                    var y = 0;
+                    y < accessor.Height;
+                    y++)
                 {
-                    ref var pixel =
-                        ref row[x];
+                    var row =
+                        accessor.GetRowSpan(y);
 
-                    var r =
-                        pixel.R / 255f;
-
-                    var g =
-                        pixel.G / 255f;
-
-                    var b =
-                        pixel.B / 255f;
-
-                    var lum =
-                        0.2126f * r +
-                        0.7152f * g +
-                        0.0722f * b;
-
-                    if (Math.Abs(black) > 0.001f)
+                    for (
+                        var x = 0;
+                        x < row.Length;
+                        x++)
                     {
-                        var mapped =
+                        ref var pixel =
+                            ref row[x];
+
+                        var r =
+                            pixel.R / 255f;
+
+                        var g =
+                            pixel.G / 255f;
+
+                        var b =
+                            pixel.B / 255f;
+
+                        var lum =
+                            0.2126f * r +
+                            0.7152f * g +
+                            0.0722f * b;
+
+                        if (Math.Abs(black) > 0.001f)
+                        {
+                            var mapped =
+                                Math.Clamp(
+                                    (lum - black) /
+                                    Math.Max(
+                                        0.001f,
+                                        1f - black),
+                                    0f,
+                                    1f);
+
+                            var ratio =
+                                lum <= 0.5f
+                                    ? mapped /
+                                      Math.Max(
+                                          lum,
+                                          0.001f)
+                                    : 1f;
+
+                            pixel.R =
+                                ClampByte(
+                                    pixel.R * ratio);
+
+                            pixel.G =
+                                ClampByte(
+                                    pixel.G * ratio);
+
+                            pixel.B =
+                                ClampByte(
+                                    pixel.B * ratio);
+
+                            lum =
+                                0.2126f *
+                                    (pixel.R / 255f) +
+                                0.7152f *
+                                    (pixel.G / 255f) +
+                                0.0722f *
+                                    (pixel.B / 255f);
+                        }
+
+                        var h =
                             Math.Clamp(
-                                (lum - black) /
-                                Math.Max(
-                                    0.001f,
-                                    1f - black),
-                                0f,
+                                (float)highlights / 100f,
+                                -1f,
                                 1f);
 
-                        var ratio =
-                            lum <= 0.5f
-                                ? mapped /
-                                  Math.Max(
-                                      lum,
-                                      0.001f)
-                                : 1f;
-
-                        pixel.R =
-                            ClampByte(
-                                pixel.R * ratio);
-
-                        pixel.G =
-                            ClampByte(
-                                pixel.G * ratio);
-
-                        pixel.B =
-                            ClampByte(
-                                pixel.B * ratio);
-
-                        lum =
-                            0.2126f *
-                                (pixel.R / 255f) +
-                            0.7152f *
-                                (pixel.G / 255f) +
-                            0.0722f *
-                                (pixel.B / 255f);
-                    }
-
-                    var h =
-                        Math.Clamp(
-                            (float)highlights / 100f,
-                            -1f,
-                            1f);
-
-                    var s =
-                        Math.Clamp(
-                            (float)shadows / 100f,
-                            -1f,
-                            1f);
-
-                    if (lum > 0.55f &&
-                        h != 0)
-                    {
-                        var factor =
-                            1f -
-                            h *
+                        var s =
                             Math.Clamp(
-                                (lum - 0.55f) /
-                                0.45f,
-                                0f,
-                                1f) *
-                            0.35f;
+                                (float)shadows / 100f,
+                                -1f,
+                                1f);
 
-                        pixel.R =
-                            ClampByte(
-                                pixel.R * factor);
+                        if (lum > 0.55f &&
+                            h != 0)
+                        {
+                            var factor =
+                                1f -
+                                h *
+                                Math.Clamp(
+                                    (lum - 0.55f) /
+                                    0.45f,
+                                    0f,
+                                    1f) *
+                                0.35f;
 
-                        pixel.G =
-                            ClampByte(
-                                pixel.G * factor);
+                            pixel.R =
+                                ClampByte(
+                                    pixel.R * factor);
 
-                        pixel.B =
-                            ClampByte(
-                                pixel.B * factor);
-                    }
+                            pixel.G =
+                                ClampByte(
+                                    pixel.G * factor);
 
-                    if (lum < 0.45f &&
-                        s != 0)
-                    {
-                        var factor =
-                            1f +
-                            s *
-                            Math.Clamp(
-                                (0.45f - lum) /
-                                0.45f,
-                                0f,
-                                1f) *
-                            0.35f;
+                            pixel.B =
+                                ClampByte(
+                                    pixel.B * factor);
+                        }
 
-                        pixel.R =
-                            ClampByte(
-                                pixel.R * factor);
+                        if (lum < 0.45f &&
+                            s != 0)
+                        {
+                            var factor =
+                                1f +
+                                s *
+                                Math.Clamp(
+                                    (0.45f - lum) /
+                                    0.45f,
+                                    0f,
+                                    1f) *
+                                0.35f;
 
-                        pixel.G =
-                            ClampByte(
-                                pixel.G * factor);
+                            pixel.R =
+                                ClampByte(
+                                    pixel.R * factor);
 
-                        pixel.B =
-                            ClampByte(
-                                pixel.B * factor);
+                            pixel.G =
+                                ClampByte(
+                                    pixel.G * factor);
+
+                            pixel.B =
+                                ClampByte(
+                                    pixel.B * factor);
+                        }
                     }
                 }
-            }
-        });
+            });
 
         UpdatePreview();
     }
@@ -733,7 +752,9 @@ public partial class MainWindow : Window
     private void Auto_Click(
         object? sender,
         Avalonia.Interactivity.RoutedEventArgs e)
-        => AnalyzeAuto_Click(sender, e);
+    {
+        AnalyzeAuto_Click(sender, e);
+    }
 
     private void ClearPreview()
     {
@@ -772,10 +793,12 @@ public partial class MainWindow : Window
     }
 
     private static byte ClampByte(float value)
-        => (byte)Math.Clamp(
+    {
+        return (byte)Math.Clamp(
             (int)Math.Round(value),
             0,
             255);
+    }
 
     private static AutoProposal Analyze(
         ImageSharpRgbaImage image)
