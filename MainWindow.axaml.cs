@@ -13,6 +13,8 @@ using Avalonia.Styling;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.PixelFormats;
+using ImageSharpImage = SixLabors.ImageSharp.Image;
+using ImageSharpRgbaImage = SixLabors.ImageSharp.Image<Rgba32>;
 using SixLabors.ImageSharp.Processing;
 
 namespace LichtbildStudio;
@@ -20,8 +22,8 @@ namespace LichtbildStudio;
 public partial class MainWindow : Window
 {
     private readonly List<string> _allFiles = new();
-    private Image<Rgba32>? _original;
-    private Image<Rgba32>? _working;
+    private ImageSharpRgbaImage? _original;
+    private ImageSharpRgbaImage? _working;
     private string? _currentFile;
     private AutoProposal _proposal = new();
     private bool _showOriginal;
@@ -104,7 +106,7 @@ public partial class MainWindow : Window
             _working?.Dispose();
 
             await using var stream = File.OpenRead(path);
-            _original = await Image.LoadAsync<Rgba32>(stream);
+            _original = await ImageSharpImage.LoadAsync<Rgba32>(stream);
             _working = _original.Clone();
 
             ResetSlidersWithoutPreview();
@@ -420,7 +422,7 @@ public partial class MainWindow : Window
     private static byte ClampByte(float value)
         => (byte)Math.Clamp((int)Math.Round(value), 0, 255);
 
-    private static AutoProposal Analyze(Image<Rgba32> image)
+    private static AutoProposal Analyze(ImageSharpRgbaImage image)
     {
         long count = 0;
         double luminance = 0;
